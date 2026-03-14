@@ -69,6 +69,7 @@ interface Product {
   fullInfo?: string;
   price: number;
   image: string;
+  images?: string[];
   inStock: boolean;
   sellerId?: string;
   seller?: {
@@ -230,7 +231,7 @@ const ReviewSection = ({ productId, isAdmin, adminToken }: { productId: string, 
         </h4>
         <button 
           onClick={() => setShowModal(true)}
-          className="text-[10px] font-bold uppercase tracking-widest text-black/40 hover:text-black transition-colors px-2 py-1 rounded-md border border-black/10 hover:border-black/20"
+          className="text-[10px] font-bold tracking-widest text-black/40 hover:text-black transition-colors px-2 py-1 rounded-md border border-black/10 hover:border-black/20"
         >
           Rate & Review
         </button>
@@ -354,6 +355,26 @@ const ReviewSection = ({ productId, isAdmin, adminToken }: { productId: string, 
   );
 };
 
+const ProductSkeleton = () => (
+  <div className="bg-white rounded-2xl overflow-hidden border border-black/5 flex flex-col h-full animate-pulse">
+    <div className="aspect-square bg-black/5" />
+    <div className="p-5 flex flex-col flex-1 gap-3">
+      <div className="flex justify-between items-start">
+        <div className="h-6 bg-black/5 rounded-lg w-2/3" />
+        <div className="h-6 bg-black/5 rounded-lg w-1/4" />
+      </div>
+      <div className="space-y-2">
+        <div className="h-4 bg-black/5 rounded-lg w-full" />
+        <div className="h-4 bg-black/5 rounded-lg w-5/6" />
+      </div>
+      <div className="flex gap-2 mt-auto">
+        <div className="h-10 bg-black/5 rounded-xl flex-1" />
+        <div className="h-10 bg-black/5 rounded-xl flex-1" />
+      </div>
+    </div>
+  </div>
+);
+
 export default function App() {
   const [products, setProducts] = useState<Product[]>([]);
   const [sellers, setSellers] = useState<Seller[]>([]);
@@ -397,6 +418,7 @@ export default function App() {
     fullInfo: '',
     price: 0,
     image: '',
+    images: [],
     inStock: true,
     sellerId: ''
   });
@@ -695,19 +717,41 @@ export default function App() {
   };
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setNewProduct({ ...newProduct, image: reader.result as string });
-      };
-      reader.readAsDataURL(file);
+    const files = e.target.files;
+    if (files) {
+      Array.from(files).forEach((file: File) => {
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          setNewProduct((prev) => ({ 
+            ...prev, 
+            images: [...(prev.images || []), reader.result as string],
+            image: prev.image || (reader.result as string) // Set first as main
+          }));
+        };
+        reader.readAsDataURL(file);
+      });
     }
+  };
+
+  const removeImage = (index: number) => {
+    setNewProduct(prev => {
+      const newImages = [...(prev.images || [])];
+      newImages.splice(index, 1);
+      return {
+        ...prev,
+        images: newImages,
+        image: newImages[0] || ''
+      };
+    });
   };
 
   const addProduct = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!adminToken) return;
+    if ((newProduct.images?.length || 0) < 3) {
+      alert('Please add at least 3 images for the product.');
+      return;
+    }
     setUploading(true);
     try {
       const res = await fetch(`${API_URL}/api/products`, {
@@ -720,7 +764,7 @@ export default function App() {
       });
       if (res.ok) {
         setShowAddModal(false);
-        setNewProduct({ name: '', description: '', fullInfo: '', price: 0, image: '', inStock: true, sellerId: '' });
+        setNewProduct({ name: '', description: '', fullInfo: '', price: 0, image: '', images: [], inStock: true, sellerId: '' });
         fetchProducts();
       } else if (res.status === 401) {
         handleLogout();
@@ -792,19 +836,16 @@ export default function App() {
       {/* Decorative Global Gradients */}
       <div className="fixed top-0 left-0 w-full h-screen bg-gradient-to-br from-emerald-500/5 via-transparent to-transparent pointer-events-none z-0" />
       
-      {/* Premium Header */}
-      <header className="sticky top-0 z-40 bg-white/70 backdrop-blur-xl border-b border-black/5 overflow-hidden">
-        {/* Decorative Header Gradient */}
-        <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-b from-emerald-500/5 to-transparent pointer-events-none" />
-        
+      {/* Premium Header - Background Removed */}
+      <header className="sticky top-0 z-40 border-b border-black/5 overflow-hidden">
         <div className="max-w-7xl mx-auto px-4 md:px-8 h-20 flex items-center justify-between relative z-10">
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-4 cursor-pointer" onClick={() => { setSelectedProduct(null); setCurrentView('shop'); }}>
             <div className="w-12 h-12 bg-black rounded-2xl flex items-center justify-center shadow-lg shadow-black/10">
               <ShoppingBag className="text-white w-6 h-6" />
             </div>
             <div>
-              <h1 className="text-xl font-black tracking-tight leading-none">CLEANSHOP</h1>
-              <p className="text-[10px] font-bold text-black/20 uppercase tracking-[0.2em]">Pure Quality</p>
+              <h1 className="text-xl font-black tracking-tight leading-none">CleanShop</h1>
+              <p className="text-[10px] font-bold text-black/20 tracking-[0.2em]">Pure Quality</p>
             </div>
           </div>
 
@@ -848,17 +889,32 @@ export default function App() {
                   <span className="text-[10px] font-bold text-black/40">Product Details</span>
                 </div>
               </div>
-
               <div className="grid grid-cols-1 md:grid-cols-2">
-                <div className="aspect-square flex items-center justify-center p-4">
-                  <motion.img 
-                    initial={{ scale: 0.9, opacity: 0 }}
-                    animate={{ scale: 1, opacity: 1 }}
-                    transition={{ delay: 0.2 }}
-                    src={selectedProduct.image || 'https://picsum.photos/seed/product/800/800'} 
-                    alt={selectedProduct.name} 
-                    className="w-full h-full object-contain rounded-3xl"
-                  />
+                <div className="flex flex-col gap-4">
+                  <div className="aspect-square flex items-center justify-center p-4">
+                    <motion.img 
+                      initial={{ scale: 0.9, opacity: 0 }}
+                      animate={{ scale: 1, opacity: 1 }}
+                      transition={{ delay: 0.2 }}
+                      src={selectedProduct.image || 'https://picsum.photos/seed/product/800/800'} 
+                      alt={selectedProduct.name} 
+                      className="w-full h-full object-contain rounded-3xl"
+                    />
+                  </div>
+                  {/* Multi-image thumbnail gallery */}
+                  {selectedProduct.images && selectedProduct.images.length > 1 && (
+                    <div className="flex flex-wrap gap-3 px-4 pb-4">
+                      {selectedProduct.images.map((img, idx) => (
+                        <button 
+                          key={idx}
+                          onClick={() => setSelectedProduct({ ...selectedProduct, image: img })}
+                          className={`w-16 h-16 rounded-xl overflow-hidden border-2 transition-all ${selectedProduct.image === img ? 'border-black' : 'border-transparent opacity-60 hover:opacity-100'}`}
+                        >
+                          <img src={img} alt={`Thumbnail ${idx}`} className="w-full h-full object-cover" />
+                        </button>
+                      ))}
+                    </div>
+                  )}
                 </div>
                 <div className="p-8 md:p-12 lg:p-16 flex flex-col">
                   <div className="flex justify-between items-start mb-6">
@@ -1020,9 +1076,8 @@ export default function App() {
               )}
 
               {loading ? (
-                <div className="flex flex-col items-center justify-center py-20 gap-4">
-                  <Loader2 className="w-10 h-10 animate-spin text-black/20" />
-                  <p className="text-black/40 font-medium">Loading products...</p>
+                <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                  {[...Array(8)].map((_, i) => <ProductSkeleton key={i} />)}
                 </div>
               ) : products.length === 0 ? (
                 <div className="text-center py-20 bg-white rounded-3xl border border-dashed border-black/10">
@@ -1031,7 +1086,7 @@ export default function App() {
                   <p className="text-black/40">Start by adding your first product in the admin panel.</p>
                 </div>
               ) : (
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                   {products.map((product) => (
                     <motion.div 
                       layout
@@ -1155,7 +1210,7 @@ export default function App() {
                 <form onSubmit={submitAdRequest} className="space-y-4">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="space-y-1">
-                      <label className="text-xs font-bold uppercase tracking-wider text-black/40 px-1">Full Name</label>
+                      <label className="text-xs font-bold tracking-wider text-black/40 px-1">Full Name</label>
                       <input 
                         type="text"
                         required
@@ -1165,7 +1220,7 @@ export default function App() {
                       />
                     </div>
                     <div className="space-y-1">
-                      <label className="text-xs font-bold uppercase tracking-wider text-black/40 px-1">Email Address</label>
+                      <label className="text-xs font-bold tracking-wider text-black/40 px-1">Email Address</label>
                       <input 
                         type="email"
                         required
@@ -1176,7 +1231,7 @@ export default function App() {
                     </div>
                   </div>
                   <div className="space-y-1">
-                    <label className="text-xs font-bold uppercase tracking-wider text-black/40 px-1">WhatsApp Number (Optional)</label>
+                    <label className="text-xs font-bold tracking-wider text-black/40 px-1">WhatsApp Number (Optional)</label>
                     <input 
                       type="text"
                       value={newAdRequest.whatsapp}
@@ -1185,7 +1240,7 @@ export default function App() {
                     />
                   </div>
                   <div className="space-y-1">
-                    <label className="text-xs font-bold uppercase tracking-wider text-black/40 px-1">Ad Details / Requirements</label>
+                    <label className="text-xs font-bold tracking-wider text-black/40 px-1">Ad Details / Requirements</label>
                     <textarea 
                       required
                       value={newAdRequest.details}
@@ -1325,7 +1380,7 @@ export default function App() {
                   />
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-1">
-                      <label className="text-xs font-bold uppercase tracking-wider text-black/40 px-1">Start Date</label>
+                      <label className="text-xs font-bold tracking-wider text-black/40 px-1">Start Date</label>
                       <input 
                         type="date"
                         value={newAd.startDate}
@@ -1334,7 +1389,7 @@ export default function App() {
                       />
                     </div>
                     <div className="space-y-1">
-                      <label className="text-xs font-bold uppercase tracking-wider text-black/40 px-1">End Date</label>
+                      <label className="text-xs font-bold tracking-wider text-black/40 px-1">End Date</label>
                       <input 
                         type="date"
                         value={newAd.endDate}
@@ -1344,7 +1399,7 @@ export default function App() {
                     </div>
                   </div>
                   <div className="space-y-1">
-                    <label className="text-xs font-bold uppercase tracking-wider text-black/40 px-1">Ad Image</label>
+                    <label className="text-xs font-bold tracking-wider text-black/40 px-1">Ad Image</label>
                     <div className="relative group">
                       <input 
                         type="file"
@@ -1431,7 +1486,7 @@ export default function App() {
               
               <div className="flex-1 overflow-y-auto p-6">
                 <form onSubmit={addSeller} className="space-y-4 mb-8 p-4 bg-black/5 rounded-2xl">
-                  <h3 className="text-sm font-bold uppercase tracking-wider text-black/40">Add New Seller</h3>
+                  <h3 className="text-sm font-bold text-black/40">Add New Seller</h3>
                   <input 
                     required
                     type="text"
@@ -1462,7 +1517,7 @@ export default function App() {
                 </form>
 
                 <div className="space-y-3">
-                  <h3 className="text-sm font-bold uppercase tracking-wider text-black/40">Existing Sellers</h3>
+                  <h3 className="text-sm font-bold text-black/40">Existing Sellers</h3>
                   {sellers.map(seller => (
                     <div key={seller._id} className="p-4 bg-white border border-black/5 rounded-2xl flex justify-between items-center">
                       <div>
@@ -1513,7 +1568,7 @@ export default function App() {
 
                 <form onSubmit={handleLogin} className="space-y-4">
                   <div className="space-y-1">
-                    <label className="text-xs font-bold uppercase tracking-wider text-black/40 px-1">Password</label>
+                    <label className="text-xs font-bold tracking-wider text-black/40 px-1">Password</label>
                     <input 
                       required
                       type="password"
@@ -1571,7 +1626,7 @@ export default function App() {
 
                 <form onSubmit={addProduct} className="space-y-4">
                   <div className="space-y-1">
-                    <label className="text-xs font-bold uppercase tracking-wider text-black/40 px-1">Product Name</label>
+                    <label className="text-xs font-bold tracking-wider text-black/40 px-1">Product Name</label>
                     <input 
                       required
                       type="text"
@@ -1584,7 +1639,7 @@ export default function App() {
 
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-1">
-                      <label className="text-xs font-bold uppercase tracking-wider text-black/40 px-1">Price ($)</label>
+                      <label className="text-xs font-bold tracking-wider text-black/40 px-1">Price ($)</label>
                       <input 
                         required
                         type="number"
@@ -1596,7 +1651,7 @@ export default function App() {
                       />
                     </div>
                     <div className="space-y-1">
-                      <label className="text-xs font-bold uppercase tracking-wider text-black/40 px-1">Assign Seller</label>
+                      <label className="text-xs font-bold tracking-wider text-black/40 px-1">Assign Seller</label>
                       <select 
                         required
                         value={newProduct.sellerId}
@@ -1610,9 +1665,42 @@ export default function App() {
                       </select>
                     </div>
                   </div>
+                  <div className="space-y-1">
+                    <label className="text-xs font-bold text-black/40 px-1">Product Images (Add at least two more)</label>
+                    <div className="grid grid-cols-3 gap-3 mb-3">
+                      {newProduct.images?.map((img, idx) => (
+                        <div key={idx} className="relative aspect-square rounded-xl overflow-hidden group">
+                          <img src={img} alt="Preview" className="w-full h-full object-cover" />
+                          <button 
+                            type="button"
+                            onClick={() => removeImage(idx)}
+                            className="absolute top-1 right-1 p-1 bg-white/90 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                          >
+                            <XCircle className="w-3 h-3 text-red-500" />
+                          </button>
+                        </div>
+                      ))}
+                      <div className="relative aspect-square">
+                        <input 
+                          type="file"
+                          accept="image/*"
+                          multiple
+                          onChange={handleImageUpload}
+                          className="hidden"
+                          id="image-upload"
+                        />
+                        <label 
+                          htmlFor="image-upload"
+                          className="flex flex-col items-center justify-center w-full h-full border-2 border-dashed border-black/10 rounded-xl cursor-pointer hover:bg-black/5 transition-all"
+                        >
+                          <Plus className="w-6 h-6 text-black/20" />
+                        </label>
+                      </div>
+                    </div>
+                  </div>
 
                   <div className="space-y-1">
-                    <label className="text-xs font-bold uppercase tracking-wider text-black/40 px-1">Description</label>
+                    <label className="text-xs font-bold tracking-wider text-black/40 px-1">Description</label>
                     <textarea 
                       required
                       value={newProduct.description}
@@ -1624,7 +1712,7 @@ export default function App() {
                   </div>
 
                   <div className="space-y-1">
-                    <label className="text-xs font-bold uppercase tracking-wider text-black/40 px-1">Full Information (Optional)</label>
+                    <label className="text-xs font-bold tracking-wider text-black/40 px-1">Full Information (Optional)</label>
                     <textarea 
                       value={newProduct.fullInfo}
                       onChange={(e) => setNewProduct({ ...newProduct, fullInfo: e.target.value })}
@@ -1632,32 +1720,6 @@ export default function App() {
                       rows={4}
                       className="w-full px-4 py-3 bg-black/5 border-none rounded-xl focus:ring-2 focus:ring-black transition-all outline-none resize-none"
                     />
-                  </div>
-
-                  <div className="space-y-1">
-                    <label className="text-xs font-bold uppercase tracking-wider text-black/40 px-1">Product Image</label>
-                    <div className="relative group">
-                      <input 
-                        type="file"
-                        accept="image/*"
-                        onChange={handleImageUpload}
-                        className="hidden"
-                        id="image-upload"
-                      />
-                      <label 
-                        htmlFor="image-upload"
-                        className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-black/10 rounded-2xl cursor-pointer hover:bg-black/5 transition-all overflow-hidden"
-                      >
-                        {newProduct.image ? (
-                          <img src={newProduct.image} alt="Preview" className="w-full h-full object-cover" />
-                        ) : (
-                          <>
-                            <ImageIcon className="w-8 h-8 text-black/20 mb-2" />
-                            <span className="text-sm text-black/40 font-medium">Click to upload image</span>
-                          </>
-                        )}
-                      </label>
-                    </div>
                   </div>
 
                   <button 
@@ -1734,12 +1796,12 @@ export default function App() {
       <footer className="bg-white border-t border-black/5 py-12 mt-20">
         <div className="max-w-7xl mx-auto px-6 text-center">
           <div className="flex flex-wrap items-center justify-center gap-8 mb-8">
-            <button onClick={() => setCurrentView('tos')} className="text-xs font-bold uppercase tracking-widest text-black/40 hover:text-black transition-colors">Terms of Service</button>
-            <button onClick={() => setCurrentView('privacy')} className="text-xs font-bold uppercase tracking-widest text-black/40 hover:text-black transition-colors">Privacy Policy</button>
+            <button onClick={() => setCurrentView('tos')} className="text-xs font-bold tracking-widest text-black/40 hover:text-black transition-colors">Terms of Service</button>
+            <button onClick={() => setCurrentView('privacy')} className="text-xs font-bold tracking-widest text-black/40 hover:text-black transition-colors">Privacy Policy</button>
             {!isAdmin && (
               <button 
                 onClick={handleAdminToggle}
-                className="text-xs font-bold uppercase tracking-widest text-black/40 hover:text-black transition-colors flex items-center gap-1"
+                className="text-xs font-bold tracking-widest text-black/40 hover:text-black transition-colors flex items-center gap-1"
               >
                 <Settings className="w-3 h-3" />
                 Admin Panel
@@ -1747,7 +1809,7 @@ export default function App() {
             )}
           </div>
           <p className="text-sm text-black/20 font-medium">
-            &copy; {new Date().getFullYear()} CLEANSHOP. Pure Quality.
+            &copy; {new Date().getFullYear()} CleanShop. Pure Quality.
           </p>
         </div>
       </footer>
