@@ -1,0 +1,5 @@
+{
+  "name": "Clean Shop",
+  "description": "A responsive e-commerce site with an admin dashboard for product management, connected to MongoDB.",
+  "requestFramePermissions": []
+}
