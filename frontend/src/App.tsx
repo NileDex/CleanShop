@@ -23,6 +23,7 @@ import {
   Calendar,
   MessageSquare
 } from 'lucide-react';
+import LegalPage from './pages/Legal';
 
 const API_URL = import.meta.env.VITE_API_URL || '';
 
@@ -96,6 +97,8 @@ const AdCarousel = ({ ads, onBookAd }: { ads: Ad[], onBookAd: () => void }) => {
     return now >= start && now <= end;
   });
 
+  if (activeAds.length === 0) return null;
+
   return (
     <div className="relative w-full h-48 md:h-64 lg:h-80 overflow-hidden rounded-3xl mb-12 shadow-xl shadow-black/5 group">
       {activeAds.length > 0 ? (
@@ -156,11 +159,12 @@ const AdCarousel = ({ ads, onBookAd }: { ads: Ad[], onBookAd: () => void }) => {
   );
 };
 
-const ReviewSection = ({ productId }: { productId: string }) => {
+const ReviewSection = ({ productId, isAdmin, adminToken }: { productId: string, isAdmin?: boolean, adminToken?: string | null }) => {
   const [reviews, setReviews] = useState<Review[]>([]);
   const [newReview, setNewReview] = useState({ userName: '', comment: '', rating: 5 });
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
+  const [showModal, setShowModal] = useState(false);
 
   useEffect(() => {
     fetchReviews();
@@ -192,6 +196,7 @@ const ReviewSection = ({ productId }: { productId: string }) => {
       });
       if (res.ok) {
         setNewReview({ userName: '', comment: '', rating: 5 });
+        setShowModal(false);
         fetchReviews();
       }
     } catch (err) {
@@ -201,14 +206,37 @@ const ReviewSection = ({ productId }: { productId: string }) => {
     }
   };
 
+  const handleDelete = async (id: string) => {
+    if (!isAdmin || !adminToken) return;
+    if (!confirm('Are you sure you want to delete this review?')) return;
+    
+    try {
+      const res = await fetch(`${API_URL}/api/reviews/${id}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${adminToken}` }
+      });
+      if (res.ok) fetchReviews();
+    } catch (err) {
+      console.error('Error deleting review:', err);
+    }
+  };
+
   return (
     <div className="mt-6 pt-6 border-t border-black/5">
-      <h4 className="font-bold text-sm mb-4 flex items-center gap-2">
-        <MessageSquare className="w-4 h-4" />
-        Reviews ({reviews.length})
-      </h4>
+      <div className="flex items-center justify-between mb-4">
+        <h4 className="font-bold text-sm flex items-center gap-2">
+          <MessageSquare className="w-4 h-4" />
+          Reviews ({reviews.length})
+        </h4>
+        <button 
+          onClick={() => setShowModal(true)}
+          className="text-[10px] font-bold uppercase tracking-widest text-black/40 hover:text-black transition-colors px-2 py-1 rounded-md border border-black/10 hover:border-black/20"
+        >
+          Rate & Review
+        </button>
+      </div>
 
-      <div className="space-y-4 mb-6 max-h-48 overflow-y-auto pr-2 custom-scrollbar">
+      <div className="space-y-4 mb-2 max-h-48 overflow-y-auto pr-2 custom-scrollbar">
         {loading ? (
           <div className="flex justify-center py-4">
             <Loader2 className="w-4 h-4 animate-spin text-black/20" />
@@ -217,57 +245,111 @@ const ReviewSection = ({ productId }: { productId: string }) => {
           <p className="text-xs text-black/30 italic">No reviews yet. Be the first to share your opinion!</p>
         ) : (
           reviews.map((review) => (
-            <div key={review._id} className="bg-black/5 p-3 rounded-xl">
-              <div className="flex justify-between items-start mb-1">
-                <span className="text-xs font-bold">{review.userName}</span>
-                <div className="flex gap-0.5">
-                  {[...Array(5)].map((_, i) => (
-                    <Star 
-                      key={i} 
-                      className={`w-2.5 h-2.5 ${i < review.rating ? 'text-yellow-400 fill-yellow-400' : 'text-black/10'}`} 
-                    />
-                  ))}
+            <div key={review._id} className="bg-black/5 p-3 rounded-xl transition-all hover:bg-black/10 flex justify-between items-start group">
+              <div className="flex-1">
+                <div className="flex justify-between items-start mb-1">
+                  <span className="text-xs font-bold">{review.userName}</span>
+                  <div className="flex gap-0.5">
+                    {[...Array(5)].map((_, i) => (
+                      <Star 
+                        key={i} 
+                        className={`w-2.5 h-2.5 ${i < review.rating ? 'text-yellow-400 fill-yellow-400' : 'text-black/10'}`} 
+                      />
+                    ))}
+                  </div>
                 </div>
+                <p className="text-xs text-black/60 leading-relaxed">{review.comment}</p>
               </div>
-              <p className="text-xs text-black/60 leading-relaxed">{review.comment}</p>
+              {isAdmin && (
+                <button 
+                  onClick={() => review._id && handleDelete(review._id)}
+                  className="ml-2 p-1 text-black/20 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-all"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                </button>
+              )}
             </div>
           ))
         )}
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-3">
-        <div className="flex gap-2">
-          <input 
-            type="text"
-            placeholder="Your Name"
-            value={newReview.userName}
-            onChange={(e) => setNewReview({ ...newReview, userName: e.target.value })}
-            className="flex-1 bg-black/5 border-none rounded-lg px-3 py-2 text-xs focus:ring-1 focus:ring-black/10 outline-none"
-            required
-          />
-          <select 
-            value={newReview.rating}
-            onChange={(e) => setNewReview({ ...newReview, rating: Number(e.target.value) })}
-            className="bg-black/5 border-none rounded-lg px-2 py-2 text-xs focus:ring-1 focus:ring-black/10 outline-none"
-          >
-            {[5,4,3,2,1].map(n => <option key={n} value={n}>{n} Stars</option>)}
-          </select>
-        </div>
-        <textarea 
-          placeholder="Share your opinion..."
-          value={newReview.comment}
-          onChange={(e) => setNewReview({ ...newReview, comment: e.target.value })}
-          className="w-full bg-black/5 border-none rounded-lg px-3 py-2 text-xs focus:ring-1 focus:ring-black/10 outline-none min-h-[60px] resize-none"
-          required
-        />
-        <button 
-          type="submit"
-          disabled={submitting}
-          className="w-full bg-black text-white py-2 rounded-lg text-xs font-bold hover:opacity-90 transition-all disabled:opacity-50 flex items-center justify-center gap-2"
-        >
-          {submitting ? <Loader2 className="w-3 h-3 animate-spin" /> : <><Send className="w-3 h-3" /> Post Review</>}
-        </button>
-      </form>
+      <AnimatePresence>
+        {showModal && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setShowModal(false)}
+              className="absolute inset-0 bg-black/40 backdrop-blur-sm"
+            />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              className="relative bg-white w-full max-w-sm rounded-3xl shadow-2xl overflow-hidden p-8"
+            >
+              <div className="flex justify-between items-center mb-6">
+                <h3 className="text-xl font-bold">Write a Review</h3>
+                <button 
+                  onClick={() => setShowModal(false)}
+                  className="p-1 hover:bg-black/5 rounded-full transition-colors"
+                >
+                  <XCircle className="w-5 h-5 text-black/20" />
+                </button>
+              </div>
+
+              <form onSubmit={handleSubmit} className="space-y-4">
+                <div className="space-y-1">
+                  <label className="text-[10px] font-bold uppercase tracking-wider text-black/40 px-1">Your Name</label>
+                  <input 
+                    type="text"
+                    placeholder="Enter your name"
+                    value={newReview.userName}
+                    onChange={(e) => setNewReview({ ...newReview, userName: e.target.value })}
+                    className="w-full bg-black/5 border-none rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-black outline-none transition-all"
+                    required
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-[10px] font-bold uppercase tracking-wider text-black/40 px-1">Rating</label>
+                  <select 
+                    value={newReview.rating}
+                    onChange={(e) => setNewReview({ ...newReview, rating: Number(e.target.value) })}
+                    className="w-full bg-black/5 border-none rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-black outline-none appearance-none cursor-pointer transition-all"
+                  >
+                    {[5,4,3,2,1].map(n => <option key={n} value={n}>{n} Stars</option>)}
+                  </select>
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-[10px] font-bold uppercase tracking-wider text-black/40 px-1">Review</label>
+                  <textarea 
+                    placeholder="What did you think of this product?"
+                    value={newReview.comment}
+                    onChange={(e) => setNewReview({ ...newReview, comment: e.target.value })}
+                    className="w-full bg-black/5 border-none rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-black outline-none min-h-[100px] resize-none transition-all"
+                    required
+                  />
+                </div>
+
+                <button 
+                  type="submit"
+                  disabled={submitting}
+                  className="w-full bg-black text-white py-4 rounded-2xl font-bold text-sm hover:opacity-90 active:scale-[0.98] transition-all disabled:opacity-50 flex items-center justify-center gap-2 mt-2"
+                >
+                  {submitting ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <><Send className="w-4 h-4" /> Submit Review</>
+                  )}
+                </button>
+              </form>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };
@@ -318,6 +400,8 @@ export default function App() {
     inStock: true,
     sellerId: ''
   });
+
+  const [currentView, setCurrentView] = useState<'shop' | 'tos' | 'privacy'>('shop');
 
   const [confirmModal, setConfirmModal] = useState<{
     show: boolean;
@@ -698,73 +782,88 @@ export default function App() {
     window.location.href = `mailto:${email}?subject=${subject}&body=${body}`;
   };
 
-  return (
-    <div className="min-h-screen bg-[#F8F9FA] text-[#1A1A1A] font-sans relative overflow-hidden">
-      {/* Decorative Gradients */}
-      <div className="fixed top-0 left-0 w-full h-32 bg-gradient-to-b from-emerald-500/5 to-transparent pointer-events-none z-0" />
-      <div className="fixed -top-24 -left-24 w-96 h-96 bg-emerald-500/10 blur-[120px] rounded-full pointer-events-none z-0" />
-      <div className="fixed top-1/4 -right-24 w-80 h-80 bg-blue-500/5 blur-[100px] rounded-full pointer-events-none z-0" />
-      <div className="fixed bottom-0 left-0 w-full h-full bg-[radial-gradient(circle_at_50%_50%,rgba(16,185,129,0.02)_0%,transparent_70%)] pointer-events-none z-0" />
+  if (currentView !== 'shop') {
+    return <LegalPage onBack={() => setCurrentView('shop')} tab={currentView === 'tos' ? 'tos' : 'privacy'} />;
+  }
 
-      {/* Navigation */}
-      <nav className="sticky top-0 z-40 bg-white/80 backdrop-blur-md border-b border-black/5">
-        <div className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 bg-black rounded-lg flex items-center justify-center">
-              <ShoppingBag className="w-5 h-5 text-white" />
-            </div>
-            <span className="font-bold text-xl tracking-tight">CLEAN SHOP</span>
-          </div>
-          
+  return (
+    <div className="min-h-screen bg-slate-50 font-sans text-slate-900 selection:bg-black selection:text-white">
+      {/* Premium Header */}
+      <header className="sticky top-0 z-40 bg-white/70 backdrop-blur-xl border-b border-black/5">
+        <div className="max-w-7xl mx-auto px-4 md:px-8 h-20 flex items-center justify-between">
           <div className="flex items-center gap-4">
-            {isAdmin ? (
-              <>
-                <button 
-                  onClick={() => setShowAdPanel(true)}
-                  className="flex items-center gap-2 px-4 py-2 bg-black/5 text-black rounded-full text-sm font-medium hover:bg-black/10 transition-all"
-                >
-                  <ImageIcon className="w-4 h-4" />
-                  Ads
-                </button>
-                <button 
-                  onClick={() => setShowAdRequestsPanel(true)}
-                  className="flex items-center gap-2 px-4 py-2 bg-black/5 text-black rounded-full text-sm font-medium hover:bg-black/10 transition-all"
-                >
-                  <MessageSquare className="w-4 h-4" />
-                  Requests
-                </button>
-                <button 
-                  onClick={() => setShowSellerPanel(true)}
-                  className="flex items-center gap-2 px-4 py-2 bg-black/5 text-black rounded-full text-sm font-medium hover:bg-black/10 transition-all"
-                >
-                  <Plus className="w-4 h-4" />
-                  Sellers
-                </button>
-                <button 
-                  onClick={handleAdminToggle}
-                  className="flex items-center gap-2 px-4 py-2 bg-black text-white rounded-full text-sm font-medium hover:opacity-90 transition-all"
-                >
-                  <Home className="w-4 h-4" />
-                  View Shop
-                </button>
-                {adminToken && (
-                  <button 
-                    onClick={handleLogout}
-                    className="p-2 bg-red-50 text-red-500 rounded-full hover:bg-red-100 transition-colors"
-                    title="Logout"
-                  >
-                    <LogOut className="w-4 h-4" />
-                  </button>
-                )}
-              </>
-            ) : (
-              <div className="w-8 h-8" /> /* Spacer to maintain layout if needed, or just empty */
+            <div className="w-12 h-12 bg-black rounded-2xl flex items-center justify-center shadow-lg shadow-black/10">
+              <ShoppingBag className="text-white w-6 h-6" />
+            </div>
+            <div>
+              <h1 className="text-xl font-black tracking-tight leading-none">CLEANSHOP</h1>
+              <p className="text-[10px] font-bold text-black/20 uppercase tracking-[0.2em]">Pure Quality</p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-3">
+            <button 
+              onClick={handleAdminToggle}
+              className={`p-3 rounded-2xl transition-all ${
+                isAdmin ? 'bg-black text-white shadow-xl shadow-black/20' : 'bg-black/5 text-black/40 hover:bg-black/10'
+              }`}
+            >
+              <Settings className={`w-5 h-5 ${isAdmin ? 'animate-spin-slow' : ''}`} />
+            </button>
+            {adminToken && isAdmin && (
+              <button 
+                onClick={handleLogout}
+                className="p-3 bg-red-50 text-red-500 rounded-2xl hover:bg-red-100 transition-all"
+              >
+                <LogOut className="w-5 h-5" />
+              </button>
             )}
           </div>
         </div>
-      </nav>
+      </header>
 
-      <main className="max-w-7xl mx-auto px-4 py-8">
+      <main className="max-w-7xl mx-auto px-4 md:px-8 py-12 pb-32">
+        {/* Admin Quick Actions - Fully Responsive */}
+        {isAdmin && (
+          <motion.div 
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-12"
+          >
+            <button 
+              onClick={() => setShowAddModal(true)}
+              className="flex items-center justify-center gap-3 bg-black text-white p-6 rounded-[32px] font-bold hover:scale-[1.02] active:scale-[0.98] transition-all shadow-2xl shadow-black/10"
+            >
+              <Plus className="w-5 h-5" />
+              New Product
+            </button>
+            <button 
+              onClick={() => setShowSellerPanel(true)}
+              className="flex items-center justify-center gap-3 bg-white border border-black/5 text-black p-6 rounded-[32px] font-bold hover:scale-[1.02] active:scale-[0.98] transition-all shadow-xl shadow-black/5"
+            >
+              <User className="w-5 h-5 text-black/20" />
+              Sellers
+            </button>
+            <button 
+              onClick={() => setShowAdPanel(true)}
+              className="flex items-center justify-center gap-3 bg-white border border-black/5 text-black p-6 rounded-[32px] font-bold hover:scale-[1.02] active:scale-[0.98] transition-all shadow-xl shadow-black/5"
+            >
+              <ImageIcon className="w-5 h-5 text-black/20" />
+              Ads
+            </button>
+            <button 
+              onClick={() => setShowAdRequestsPanel(true)}
+              className="flex items-center justify-center gap-3 bg-white border border-black/5 text-black p-6 rounded-[32px] font-bold hover:scale-[1.02] active:scale-[0.98] transition-all shadow-xl shadow-black/5 relative"
+            >
+              <MessageCircle className="w-5 h-5 text-black/20" />
+              Requests
+              {adRequests.filter(r => r.status === 'pending').length > 0 && (
+                <span className="absolute top-4 right-4 w-3 h-3 bg-red-500 border-2 border-white rounded-full" />
+              )}
+            </button>
+          </motion.div>
+        )}
+
         {/* Ad Carousel */}
         {!isAdmin && <AdCarousel ads={ads} onBookAd={() => setShowAdBookingModal(true)} />}
 
@@ -817,16 +916,8 @@ export default function App() {
           </div>
         )}
 
-        {isAdmin && (
-          <div className="mb-8">
-            <button 
-              onClick={() => setShowAddModal(true)}
-              className="flex items-center gap-2 bg-black text-white px-6 py-3 rounded-xl font-medium hover:scale-[1.02] active:scale-[0.98] transition-all shadow-lg shadow-black/10"
-            >
-              <Plus className="w-5 h-5" />
-              Add New Product
-            </button>
-          </div>
+        {!isAdmin && (
+          <div className="w-8 h-8" /> /* Spacer to maintain layout if needed, or just empty */
         )}
 
         {loading ? (
@@ -931,7 +1022,7 @@ export default function App() {
                   )}
 
                   {/* Review Section */}
-                  <ReviewSection productId={product._id!} />
+                  <ReviewSection productId={product._id!} isAdmin={isAdmin} adminToken={adminToken} />
                 </div>
               </motion.div>
             ))}
@@ -1035,14 +1126,15 @@ export default function App() {
               animate={{ x: 0 }}
               exit={{ x: '100%' }}
               transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-              className="relative bg-white w-full max-w-md h-full shadow-2xl flex flex-col"
+              className="relative bg-white w-full sm:max-w-md h-full shadow-2xl flex flex-col"
             >
               <div className="p-6 border-b border-black/5 flex justify-between items-center">
-                <h2 className="text-xl font-bold">Ad Booking Requests</h2>
+                <h2 className="text-xl font-bold">Ad Requests</h2>
                 <button onClick={() => setShowAdRequestsPanel(false)} className="p-2 hover:bg-black/5 rounded-full">
-                  <XCircle className="w-6 h-6" />
+                  <XCircle className="w-6 h-6 text-black/20" />
                 </button>
               </div>
+
               <div className="flex-1 overflow-y-auto p-6 space-y-4">
                 {adRequests.map(request => (
                   <div key={request._id} className="p-4 bg-black/5 rounded-2xl space-y-3 relative group">
@@ -1149,7 +1241,7 @@ export default function App() {
                         type="date"
                         value={newAd.endDate}
                         onChange={(e) => setNewAd({ ...newAd, endDate: e.target.value })}
-                        className="w-full px-4 py-2 bg-white border-none rounded-xl focus:ring-2 focus:ring-black transition-all outline-none"
+                        className="w-full px-4 py-2 bg-white border-none rounded-xl focus:ring-2 focus:ring-2 focus:ring-black transition-all outline-none"
                       />
                     </div>
                   </div>
@@ -1540,29 +1632,24 @@ export default function App() {
         )}
       </AnimatePresence>
 
-      {/* Footer */}
-      <footer className="border-top border-black/5 py-12 mt-20">
-        <div className="max-w-7xl mx-auto px-4 flex flex-col md:flex-row justify-between items-center gap-8">
-          <div className="flex items-center gap-2">
-            <div className="w-6 h-6 bg-black rounded flex items-center justify-center">
-              <ShoppingBag className="w-3 h-3 text-white" />
-            </div>
-            <span className="font-bold text-sm tracking-tight">CLEAN SHOP</span>
-          </div>
-          <div className="flex gap-8 text-sm font-medium text-black/40">
-            <a href="#" className="hover:text-black transition-colors">Privacy Policy</a>
-            <a href="#" className="hover:text-black transition-colors">Terms of Service</a>
+      <footer className="bg-white border-t border-black/5 py-12 mt-20">
+        <div className="max-w-7xl mx-auto px-6 text-center">
+          <div className="flex flex-wrap items-center justify-center gap-8 mb-8">
+            <button onClick={() => setCurrentView('tos')} className="text-xs font-bold uppercase tracking-widest text-black/40 hover:text-black transition-colors">Terms of Service</button>
+            <button onClick={() => setCurrentView('privacy')} className="text-xs font-bold uppercase tracking-widest text-black/40 hover:text-black transition-colors">Privacy Policy</button>
             {!isAdmin && (
               <button 
                 onClick={handleAdminToggle}
-                className="hover:text-black transition-colors flex items-center gap-1"
+                className="text-xs font-bold uppercase tracking-widest text-black/40 hover:text-black transition-colors flex items-center gap-1"
               >
                 <Settings className="w-3 h-3" />
                 Admin Panel
               </button>
             )}
           </div>
-          <p className="text-sm text-black/20">© 2026 Clean Shop. All rights reserved.</p>
+          <p className="text-sm text-black/20 font-medium">
+            &copy; {new Date().getFullYear()} CLEANSHOP. Pure Quality.
+          </p>
         </div>
       </footer>
     </div>
