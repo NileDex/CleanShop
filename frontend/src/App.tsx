@@ -822,209 +822,310 @@ export default function App() {
         </div>
       </header>
 
-      <main className="max-w-7xl mx-auto px-4 md:px-8 py-12 pb-32">
-        {/* Admin Quick Actions - Fully Responsive */}
-        {isAdmin && (
-          <motion.div 
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="flex flex-wrap items-center gap-3 mb-12"
-          >
-            <button 
-              onClick={() => setShowAddModal(true)}
-              className="flex items-center gap-2 bg-black text-white px-5 py-2.5 rounded-full font-bold text-sm hover:scale-[1.02] active:scale-[0.98] transition-all shadow-lg shadow-black/10"
+      <main className="max-w-7xl mx-auto px-4 md:px-8 py-12 pb-32 min-h-[60vh]">
+        <AnimatePresence mode="wait">
+          {selectedProduct ? (
+            <motion.div 
+              key="detail"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              className="bg-white rounded-[32px] shadow-2xl overflow-hidden border border-black/5"
             >
-              <Plus className="w-4 h-4" />
-              New Product
-            </button>
-            <button 
-              onClick={() => setShowSellerPanel(true)}
-              className="flex items-center gap-2 bg-white border border-black/5 text-black px-5 py-2.5 rounded-full font-bold text-sm hover:scale-[1.02] active:scale-[0.98] transition-all shadow-md shadow-black/5"
-            >
-              <User className="w-4 h-4 text-black/20" />
-              Sellers
-            </button>
-            <button 
-              onClick={() => setShowAdPanel(true)}
-              className="flex items-center gap-2 bg-white border border-black/5 text-black px-5 py-2.5 rounded-full font-bold text-sm hover:scale-[1.02] active:scale-[0.98] transition-all shadow-md shadow-black/5"
-            >
-              <ImageIcon className="w-4 h-4 text-black/20" />
-              Ads
-            </button>
-            <button 
-              onClick={() => setShowAdRequestsPanel(true)}
-              className="flex items-center gap-2 bg-white border border-black/5 text-black px-5 py-2.5 rounded-full font-bold text-sm hover:scale-[1.02] active:scale-[0.98] transition-all shadow-md shadow-black/5 relative"
-            >
-              <MessageCircle className="w-4 h-4 text-black/20" />
-              Requests
-              {adRequests.filter(r => r.status === 'pending').length > 0 && (
-                <span className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 border-2 border-white rounded-full" />
-              )}
-            </button>
-          </motion.div>
-        )}
-
-        {/* Ad Carousel */}
-        {!isAdmin && <AdCarousel ads={ads} onBookAd={() => setShowAdBookingModal(true)} />}
-
-        {/* Header Section */}
-        <div className="mb-12 flex flex-col md:flex-row md:items-end justify-between gap-6">
-          <div>
-            <h1 className="text-4xl md:text-5xl font-bold mb-4 tracking-tight">
-              {isAdmin ? 'Product Management' : 'Curated Collection'}
-            </h1>
-            <p className="text-black/60 max-w-2xl text-lg">
-              {isAdmin 
-                ? 'Manage your inventory, update stock status, and add new products to your store.' 
-                : 'Discover our handpicked selection of premium products. Quality meets simplicity.'}
-            </p>
-          </div>
-        </div>
-
-        {error && (
-          <div className="mb-8 p-6 bg-red-50 border border-red-100 rounded-3xl flex flex-col gap-3">
-            <div className="flex items-center gap-3 text-red-600 font-bold">
-              <XCircle className="w-5 h-5" />
-              Connection Issue Detected
-            </div>
-            <p className="text-red-500/80 text-sm leading-relaxed">
-              {error.includes("CONFIGURATION_ERROR") ? (
-                <>
-                  <strong>Setup Required:</strong> The <code>MONGODB_URI</code> secret is missing. 
-                  Please go to <strong>Settings &gt; Secrets</strong> and add your MongoDB connection string.
-                </>
-              ) : error.includes("AUTHENTICATION_FAILED") ? (
-                <>
-                  <strong>Authentication Failed:</strong> The password in your connection string is incorrect. 
-                  Please update the <strong>MONGODB_URI</strong> in your <strong>Settings &gt; Secrets</strong> 
-                  with the correct password from your MongoDB Atlas dashboard.
-                </>
-              ) : error.includes("SSL") || dbStatus === 'error' ? (
-                <>
-                  <strong>Action Required:</strong> Your MongoDB Atlas cluster is rejecting the connection. 
-                  Please go to <strong>Network Access</strong> in your MongoDB dashboard and 
-                  add <strong>0.0.0.0/0</strong> to your allowlist.
-                </>
-              ) : error}
-            </p>
-            <button 
-              onClick={fetchProducts}
-              className="w-fit px-4 py-2 bg-red-600 text-white rounded-xl text-xs font-bold hover:bg-red-700 transition-colors"
-            >
-              Retry Connection
-            </button>
-          </div>
-        )}
-
-        {!isAdmin && (
-          <div className="w-8 h-8" /> /* Spacer to maintain layout if needed, or just empty */
-        )}
-
-        {loading ? (
-          <div className="flex flex-col items-center justify-center py-20 gap-4">
-            <Loader2 className="w-10 h-10 animate-spin text-black/20" />
-            <p className="text-black/40 font-medium">Loading products...</p>
-          </div>
-        ) : products.length === 0 ? (
-          <div className="text-center py-20 bg-white rounded-3xl border border-dashed border-black/10">
-            <Package className="w-12 h-12 mx-auto mb-4 text-black/20" />
-            <h3 className="text-xl font-semibold mb-2">No products found</h3>
-            <p className="text-black/40">Start by adding your first product in the admin panel.</p>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {products.map((product) => (
-              <motion.div 
-                layout
-                key={product._id}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="group bg-white rounded-2xl overflow-hidden border border-black/5 hover:shadow-xl hover:shadow-black/5 transition-all duration-300"
-              >
-                <div 
-                  className="aspect-square overflow-hidden bg-gray-100 relative cursor-pointer"
-                  onClick={() => setSelectedProduct(product)}
+              <div className="p-4 md:p-8 border-b border-black/5 flex items-center justify-between bg-black/5">
+                <button 
+                  onClick={() => setSelectedProduct(null)}
+                  className="flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-black/40 hover:text-black transition-colors group"
                 >
-                  <img 
-                    src={product.image || 'https://picsum.photos/seed/product/800/800'} 
-                    alt={product.name}
-                    className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
-                    referrerPolicy="no-referrer"
-                  />
-                  {!product.inStock && (
-                    <div className="absolute inset-0 bg-white/60 backdrop-blur-[2px] flex items-center justify-center">
-                      <span className="bg-white px-4 py-2 rounded-full text-sm font-bold shadow-sm border border-black/5">
-                        OUT OF STOCK
-                      </span>
-                    </div>
-                  )}
-                  {isAdmin && (
-                    <div className="absolute top-3 right-3 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity z-10">
-                      <button 
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          deleteProduct(product._id!);
-                        }}
-                        className="p-2 bg-white/90 backdrop-blur text-red-500 rounded-full shadow-sm hover:bg-red-50 transition-colors"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    </div>
-                  )}
+                  <ArrowRight className="w-4 h-4 rotate-180 group-hover:-translate-x-1 transition-transform" />
+                  Back to Shop
+                </button>
+                <div className="flex items-center gap-2">
+                  <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                  <span className="text-[10px] font-bold uppercase tracking-widest text-black/40">Product Details</span>
                 </div>
+              </div>
 
-                <div className="p-5">
-                  <div 
-                    className="cursor-pointer"
-                    onClick={() => setSelectedProduct(product)}
-                  >
-                    <div className="flex justify-between items-start mb-2">
-                      <h3 className="font-bold text-lg leading-tight group-hover:text-emerald-600 transition-colors">{product.name}</h3>
-                      <span className="font-mono font-medium text-black/60">${product.price.toFixed(2)}</span>
+              <div className="grid grid-cols-1 md:grid-cols-2">
+                <div className="aspect-square bg-gray-50 flex items-center justify-center p-4">
+                  <motion.img 
+                    initial={{ scale: 0.9, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    transition={{ delay: 0.2 }}
+                    src={selectedProduct.image || 'https://picsum.photos/seed/product/800/800'} 
+                    alt={selectedProduct.name} 
+                    className="w-full h-full object-contain rounded-2xl shadow-xl"
+                  />
+                </div>
+                <div className="p-8 md:p-12 lg:p-16 flex flex-col">
+                  <div className="flex justify-between items-start mb-6">
+                    <div>
+                      <h2 className="text-4xl font-bold leading-tight mb-2 tracking-tight">{selectedProduct.name}</h2>
+                      <div className="flex items-center gap-2">
+                        <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase ${selectedProduct.inStock ? 'bg-emerald-100 text-emerald-600' : 'bg-red-100 text-red-600'}`}>
+                          {selectedProduct.inStock ? 'Available' : 'Out of Stock'}
+                        </span>
+                      </div>
                     </div>
-                    <p className="text-sm text-black/50 line-clamp-2 mb-4 h-10">
-                      {product.description}
-                    </p>
+                    <span className="text-3xl font-mono font-medium text-emerald-600">
+                      ${selectedProduct.price.toFixed(2)}
+                    </span>
                   </div>
 
-                  {isAdmin ? (
-                    <button 
-                      onClick={() => toggleStock(product._id!, product.inStock)}
-                      className={`w-full flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-bold transition-all ${
-                        product.inStock 
-                          ? 'bg-emerald-50 text-emerald-600 hover:bg-emerald-100' 
-                          : 'bg-red-50 text-red-600 hover:bg-red-100'
-                      }`}
-                    >
-                      {product.inStock ? <CheckCircle2 className="w-4 h-4" /> : <XCircle className="w-4 h-4" />}
-                      {product.inStock ? 'Mark Out of Stock' : 'Mark In Stock'}
-                    </button>
-                  ) : (
-                    <div className="flex gap-2">
-                      <button 
-                        onClick={() => contactWhatsApp(product)}
-                        disabled={!product.inStock}
-                        className="flex-1 flex items-center justify-center gap-2 bg-[#25D366] text-white py-3 rounded-xl text-sm font-bold hover:opacity-90 active:scale-95 transition-all disabled:opacity-50 disabled:grayscale disabled:pointer-events-none"
-                      >
-                        <MessageCircle className="w-4 h-4" />
-                        WhatsApp
-                      </button>
-                      <button 
-                        onClick={() => contactEmail(product)}
-                        disabled={!product.inStock}
-                        className="flex-1 flex items-center justify-center gap-2 bg-black text-white py-3 rounded-xl text-sm font-bold hover:opacity-90 active:scale-95 transition-all disabled:opacity-50 disabled:pointer-events-none"
-                      >
-                        <Mail className="w-4 h-4" />
-                        Email
-                      </button>
+                  <div className="space-y-8 flex-1">
+                    <div>
+                      <h3 className="text-[10px] font-bold uppercase tracking-widest text-black/40 mb-3 flex items-center gap-2">
+                        Description
+                      </h3>
+                      <p className="text-black/60 leading-relaxed text-lg">{selectedProduct.description}</p>
                     </div>
-                  )}
 
+                    {selectedProduct.fullInfo && (
+                      <div>
+                        <h3 className="text-[10px] font-bold uppercase tracking-widest text-black/40 mb-3">Technical Specifications</h3>
+                        <div className="bg-black/5 p-6 rounded-2xl border border-black/5">
+                          <p className="text-black/60 leading-relaxed whitespace-pre-wrap text-sm italic font-medium">
+                            {selectedProduct.fullInfo}
+                          </p>
+                        </div>
+                      </div>
+                    )}
+
+                    {!isAdmin && (
+                      <div className="flex flex-col sm:flex-row gap-4 pt-4 border-t border-black/5">
+                        <button 
+                          onClick={() => contactWhatsApp(selectedProduct)}
+                          disabled={!selectedProduct.inStock}
+                          className="flex-1 flex items-center justify-center gap-3 bg-[#25D366] text-white py-4 rounded-2xl font-bold hover:opacity-90 active:scale-95 transition-all disabled:opacity-50 disabled:grayscale"
+                        >
+                          <MessageCircle className="w-5 h-5" />
+                          Chat on WhatsApp
+                        </button>
+                        <button 
+                          onClick={() => contactEmail(selectedProduct)}
+                          disabled={!selectedProduct.inStock}
+                          className="flex-1 flex items-center justify-center gap-3 bg-black text-white py-4 rounded-2xl font-bold hover:opacity-90 active:scale-95 transition-all disabled:opacity-50"
+                        >
+                          <Mail className="w-5 h-5" />
+                          Send Email
+                        </button>
+                      </div>
+                    )}
+
+                    <div className="pt-8 border-t border-black/5">
+                      <ReviewSection 
+                        productId={selectedProduct._id!} 
+                        isAdmin={isAdmin} 
+                        adminToken={adminToken} 
+                      />
+                    </div>
+                  </div>
                 </div>
-              </motion.div>
-            ))}
-          </div>
-        )}
+              </div>
+            </motion.div>
+          ) : (
+            <motion.div
+              key="grid"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+            >
+              {/* Admin Quick Actions - Fully Responsive */}
+              {isAdmin && (
+                <div className="flex flex-wrap items-center gap-3 mb-12">
+                  <button 
+                    onClick={() => setShowAddModal(true)}
+                    className="flex items-center gap-2 bg-black text-white px-5 py-2.5 rounded-full font-bold text-sm hover:scale-[1.02] active:scale-[0.98] transition-all shadow-lg shadow-black/10"
+                  >
+                    <Plus className="w-4 h-4" />
+                    New Product
+                  </button>
+                  <button 
+                    onClick={() => setShowSellerPanel(true)}
+                    className="flex items-center gap-2 bg-white border border-black/5 text-black px-5 py-2.5 rounded-full font-bold text-sm hover:scale-[1.02] active:scale-[0.98] transition-all shadow-md shadow-black/5"
+                  >
+                    <User className="w-4 h-4 text-black/20" />
+                    Sellers
+                  </button>
+                  <button 
+                    onClick={() => setShowAdPanel(true)}
+                    className="flex items-center gap-2 bg-white border border-black/5 text-black px-5 py-2.5 rounded-full font-bold text-sm hover:scale-[1.02] active:scale-[0.98] transition-all shadow-md shadow-black/5"
+                  >
+                    <ImageIcon className="w-4 h-4 text-black/20" />
+                    Ads
+                  </button>
+                  <button 
+                    onClick={() => setShowAdRequestsPanel(true)}
+                    className="flex items-center gap-2 bg-white border border-black/5 text-black px-5 py-2.5 rounded-full font-bold text-sm hover:scale-[1.02] active:scale-[0.98] transition-all shadow-md shadow-black/5 relative"
+                  >
+                    <MessageCircle className="w-4 h-4 text-black/20" />
+                    Requests
+                    {adRequests.filter(r => r.status === 'pending').length > 0 && (
+                      <span className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 border-2 border-white rounded-full" />
+                    )}
+                  </button>
+                </div>
+              )}
+
+              {/* Ad Carousel */}
+              {!isAdmin && <AdCarousel ads={ads} onBookAd={() => setShowAdBookingModal(true)} />}
+
+              {/* Header Section */}
+              <div className="mb-12 flex flex-col md:flex-row md:items-end justify-between gap-6">
+                <div>
+                  <h1 className="text-4xl md:text-5xl font-bold mb-4 tracking-tight">
+                    {isAdmin ? 'Product Management' : 'Curated Collection'}
+                  </h1>
+                  <p className="text-black/60 max-w-2xl text-lg">
+                    {isAdmin 
+                      ? 'Manage your inventory, update stock status, and add new products to your store.' 
+                      : 'Discover our handpicked selection of premium products. Quality meets simplicity.'}
+                  </p>
+                </div>
+              </div>
+
+              {error && (
+                <div className="mb-8 p-6 bg-red-50 border border-red-100 rounded-3xl flex flex-col gap-3">
+                  <div className="flex items-center gap-3 text-red-600 font-bold">
+                    <XCircle className="w-5 h-5" />
+                    Connection Issue Detected
+                  </div>
+                  <p className="text-red-500/80 text-sm leading-relaxed">
+                    {error.includes("CONFIGURATION_ERROR") ? (
+                      <>
+                        <strong>Setup Required:</strong> The <code>MONGODB_URI</code> secret is missing. 
+                        Please go to <strong>Settings &gt; Secrets</strong> and add your MongoDB connection string.
+                      </>
+                    ) : error.includes("AUTHENTICATION_FAILED") ? (
+                      <>
+                        <strong>Authentication Failed:</strong> The password in your connection string is incorrect. 
+                        Please update the <strong>MONGODB_URI</strong> in your <strong>Settings &gt; Secrets</strong> 
+                        with the correct password from your MongoDB Atlas dashboard.
+                      </>
+                    ) : error.includes("SSL") || dbStatus === 'error' ? (
+                      <>
+                        <strong>Action Required:</strong> Your MongoDB Atlas cluster is rejecting the connection. 
+                        Please go to <strong>Network Access</strong> in your MongoDB dashboard and 
+                        add <strong>0.0.0.0/0</strong> to your allowlist.
+                      </>
+                    ) : error}
+                  </p>
+                  <button 
+                    onClick={fetchProducts}
+                    className="w-fit px-4 py-2 bg-red-600 text-white rounded-xl text-xs font-bold hover:bg-red-700 transition-colors"
+                  >
+                    Retry Connection
+                  </button>
+                </div>
+              )}
+
+              {loading ? (
+                <div className="flex flex-col items-center justify-center py-20 gap-4">
+                  <Loader2 className="w-10 h-10 animate-spin text-black/20" />
+                  <p className="text-black/40 font-medium">Loading products...</p>
+                </div>
+              ) : products.length === 0 ? (
+                <div className="text-center py-20 bg-white rounded-3xl border border-dashed border-black/10">
+                  <Package className="w-12 h-12 mx-auto mb-4 text-black/20" />
+                  <h3 className="text-xl font-semibold mb-2">No products found</h3>
+                  <p className="text-black/40">Start by adding your first product in the admin panel.</p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                  {products.map((product) => (
+                    <motion.div 
+                      layout
+                      key={product._id}
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className="group bg-white rounded-2xl overflow-hidden border border-black/5 hover:shadow-xl hover:shadow-black/5 transition-all duration-300 flex flex-col h-full"
+                    >
+                      <div 
+                        className="aspect-square overflow-hidden bg-gray-100 relative cursor-pointer"
+                        onClick={() => setSelectedProduct(product)}
+                      >
+                        <img 
+                          src={product.image || 'https://picsum.photos/seed/product/800/800'} 
+                          alt={product.name}
+                          className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                          referrerPolicy="no-referrer"
+                        />
+                        {!product.inStock && (
+                          <div className="absolute inset-0 bg-white/60 backdrop-blur-[2px] flex items-center justify-center">
+                            <span className="bg-white px-4 py-2 rounded-full text-sm font-bold shadow-sm border border-black/5">
+                              OUT OF STOCK
+                            </span>
+                          </div>
+                        )}
+                        {isAdmin && (
+                          <div className="absolute top-3 right-3 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity z-10">
+                            <button 
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                deleteProduct(product._id!);
+                              }}
+                              className="p-2 bg-white/90 backdrop-blur text-red-500 rounded-full shadow-sm hover:bg-red-50 transition-colors"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </div>
+                        )}
+                      </div>
+
+                      <div className="p-5 flex flex-col flex-1">
+                        <div 
+                          className="cursor-pointer flex-1"
+                          onClick={() => setSelectedProduct(product)}
+                        >
+                          <div className="flex justify-between items-start mb-2">
+                            <h3 className="font-bold text-lg leading-tight group-hover:text-emerald-600 transition-colors">{product.name}</h3>
+                            <span className="font-mono font-medium text-black/60">${product.price.toFixed(2)}</span>
+                          </div>
+                          <p className="text-sm text-black/50 line-clamp-2 mb-4 h-10">
+                            {product.description}
+                          </p>
+                        </div>
+
+                        {isAdmin ? (
+                          <button 
+                            onClick={() => toggleStock(product._id!, product.inStock)}
+                            className={`w-full flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-bold transition-all mt-auto ${
+                              product.inStock 
+                                ? 'bg-emerald-50 text-emerald-600 hover:bg-emerald-100' 
+                                : 'bg-red-50 text-red-600 hover:bg-red-100'
+                            }`}
+                          >
+                            {product.inStock ? <CheckCircle2 className="w-4 h-4" /> : <XCircle className="w-4 h-4" />}
+                            {product.inStock ? 'Mark Out of Stock' : 'Mark In Stock'}
+                          </button>
+                        ) : (
+                          <div className="flex gap-2 mt-auto">
+                            <button 
+                              onClick={() => contactWhatsApp(product)}
+                              disabled={!product.inStock}
+                              className="flex-1 flex items-center justify-center gap-2 bg-[#25D366] text-white py-3 rounded-xl text-sm font-bold hover:opacity-90 active:scale-95 transition-all disabled:opacity-50 disabled:grayscale disabled:pointer-events-none"
+                            >
+                              <MessageCircle className="w-4 h-4" />
+                              WhatsApp
+                            </button>
+                            <button 
+                              onClick={() => contactEmail(product)}
+                              disabled={!product.inStock}
+                              className="flex-1 flex items-center justify-center gap-2 bg-black text-white py-3 rounded-xl text-sm font-bold hover:opacity-90 active:scale-95 transition-all disabled:opacity-50 disabled:pointer-events-none"
+                            >
+                              <Mail className="w-4 h-4" />
+                              Email
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    </motion.div>
+                  ))}
+                </div>
+              )}
+            </motion.div>
+          )}
+        </AnimatePresence>
       </main>
 
       {/* Ad Booking Modal */}
@@ -1629,98 +1730,6 @@ export default function App() {
         )}
       </AnimatePresence>
 
-      {/* Product Detail Modal */}
-      <AnimatePresence>
-        {selectedProduct && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-            <motion.div 
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              onClick={() => setSelectedProduct(null)}
-              className="absolute inset-0 bg-black/40 backdrop-blur-sm"
-            />
-            <motion.div 
-              initial={{ opacity: 0, scale: 0.95, y: 20 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.95, y: 20 }}
-              className="relative bg-white w-full max-w-2xl rounded-[32px] shadow-2xl overflow-hidden max-h-[90vh] flex flex-col"
-            >
-              <div className="absolute top-6 right-6 z-10">
-                <button 
-                  onClick={() => setSelectedProduct(null)}
-                  className="p-2 bg-white/90 backdrop-blur text-black/20 hover:text-black rounded-full shadow-lg transition-colors"
-                >
-                  <XCircle className="w-6 h-6" />
-                </button>
-              </div>
-
-              <div className="overflow-y-auto custom-scrollbar flex-1">
-                <div className="grid grid-cols-1 md:grid-cols-2">
-                  <div className="h-64 md:h-full">
-                    <img 
-                      src={selectedProduct.image} 
-                      alt={selectedProduct.name} 
-                      className="w-full h-full object-cover"
-                    />
-                  </div>
-                  <div className="p-8">
-                    <div className="flex justify-between items-start mb-4">
-                      <h2 className="text-3xl font-bold leading-tight">{selectedProduct.name}</h2>
-                      <span className="text-2xl font-mono font-medium text-emerald-600">
-                        ${selectedProduct.price.toFixed(2)}
-                      </span>
-                    </div>
-
-                    <div className="space-y-6">
-                      <div>
-                        <h3 className="text-[10px] font-bold uppercase tracking-widest text-black/40 mb-2">Description</h3>
-                        <p className="text-black/60 leading-relaxed">{selectedProduct.description}</p>
-                      </div>
-
-                      {selectedProduct.fullInfo && (
-                        <div>
-                          <h3 className="text-[10px] font-bold uppercase tracking-widest text-black/40 mb-2">Detailed Specifications</h3>
-                          <p className="text-black/60 leading-relaxed whitespace-pre-wrap text-sm border-l-2 border-black/5 pl-4">
-                            {selectedProduct.fullInfo}
-                          </p>
-                        </div>
-                      )}
-
-                      {!isAdmin && (
-                        <div className="flex gap-3">
-                          <button 
-                            onClick={() => contactWhatsApp(selectedProduct)}
-                            disabled={!selectedProduct.inStock}
-                            className="flex-1 flex items-center justify-center gap-2 bg-[#25D366] text-white py-4 rounded-2xl text-sm font-bold hover:opacity-90 active:scale-95 transition-all disabled:opacity-50 disabled:grayscale"
-                          >
-                            <MessageCircle className="w-5 h-5" />
-                            WhatsApp
-                          </button>
-                          <button 
-                            onClick={() => contactEmail(selectedProduct)}
-                            disabled={!selectedProduct.inStock}
-                            className="flex-1 flex items-center justify-center gap-2 bg-black text-white py-4 rounded-2xl text-sm font-bold hover:opacity-90 active:scale-95 transition-all disabled:opacity-50"
-                          >
-                            <Mail className="w-5 h-5" />
-                            Email
-                          </button>
-                        </div>
-                      )}
-
-                      <ReviewSection 
-                        productId={selectedProduct._id!} 
-                        isAdmin={isAdmin} 
-                        adminToken={adminToken} 
-                      />
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
 
       <footer className="bg-white border-t border-black/5 py-12 mt-20">
         <div className="max-w-7xl mx-auto px-6 text-center">
