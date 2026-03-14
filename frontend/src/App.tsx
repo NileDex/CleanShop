@@ -833,31 +833,31 @@ export default function App() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -20 }}
-              className="bg-white rounded-[32px] overflow-hidden border border-black/5 mt-8"
+              className="mt-8"
             >
-              <div className="p-4 md:p-8 border-b border-black/5 flex items-center justify-between bg-black/5">
+              <div className="py-8 flex items-center justify-between border-b border-black/5">
                 <button 
                   onClick={() => setSelectedProduct(null)}
-                  className="flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-black/40 hover:text-black transition-colors group"
+                  className="flex items-center gap-2 text-xs font-bold text-black/40 hover:text-black transition-colors group"
                 >
                   <ArrowRight className="w-4 h-4 rotate-180 group-hover:-translate-x-1 transition-transform" />
                   Back to Shop
                 </button>
                 <div className="flex items-center gap-2">
                   <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                  <span className="text-[10px] font-bold uppercase tracking-widest text-black/40">Product Details</span>
+                  <span className="text-[10px] font-bold text-black/40">Product Details</span>
                 </div>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2">
-                <div className="aspect-square bg-gray-50 flex items-center justify-center p-4">
+                <div className="aspect-square flex items-center justify-center p-4">
                   <motion.img 
                     initial={{ scale: 0.9, opacity: 0 }}
                     animate={{ scale: 1, opacity: 1 }}
                     transition={{ delay: 0.2 }}
                     src={selectedProduct.image || 'https://picsum.photos/seed/product/800/800'} 
                     alt={selectedProduct.name} 
-                    className="w-full h-full object-contain rounded-2xl"
+                    className="w-full h-full object-contain rounded-3xl"
                   />
                 </div>
                 <div className="p-8 md:p-12 lg:p-16 flex flex-col">
@@ -865,7 +865,7 @@ export default function App() {
                     <div>
                       <h2 className="text-4xl font-bold leading-tight mb-2 tracking-tight">{selectedProduct.name}</h2>
                       <div className="flex items-center gap-2">
-                        <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase ${selectedProduct.inStock ? 'bg-emerald-100 text-emerald-600' : 'bg-red-100 text-red-600'}`}>
+                        <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${selectedProduct.inStock ? 'bg-emerald-100 text-emerald-600' : 'bg-red-100 text-red-600'}`}>
                           {selectedProduct.inStock ? 'Available' : 'Out of Stock'}
                         </span>
                       </div>
@@ -877,7 +877,7 @@ export default function App() {
 
                   <div className="space-y-8 flex-1">
                     <div>
-                      <h3 className="text-[10px] font-bold uppercase tracking-widest text-black/40 mb-3 flex items-center gap-2">
+                      <h3 className="text-[10px] font-bold text-black/40 mb-3 flex items-center gap-2">
                         Description
                       </h3>
                       <p className="text-black/60 leading-relaxed text-lg">{selectedProduct.description}</p>
@@ -885,7 +885,7 @@ export default function App() {
 
                     {selectedProduct.fullInfo && (
                       <div>
-                        <h3 className="text-[10px] font-bold uppercase tracking-widest text-black/40 mb-3">Technical Specifications</h3>
+                        <h3 className="text-[10px] font-bold text-black/40 mb-3">Technical Specifications</h3>
                         <div className="bg-black/5 p-6 rounded-2xl border border-black/5">
                           <p className="text-black/60 leading-relaxed whitespace-pre-wrap text-sm italic font-medium">
                             {selectedProduct.fullInfo}
