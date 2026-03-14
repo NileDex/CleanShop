@@ -400,6 +400,7 @@ export default function App() {
     inStock: true,
     sellerId: ''
   });
+  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
 
   const [currentView, setCurrentView] = useState<'shop' | 'tos' | 'privacy'>('shop');
 
@@ -787,10 +788,16 @@ export default function App() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 font-sans text-slate-900 selection:bg-black selection:text-white">
+    <div className="min-h-screen bg-slate-50 font-sans text-slate-900 selection:bg-black selection:text-white relative overflow-hidden">
+      {/* Decorative Global Gradients */}
+      <div className="fixed top-0 left-0 w-full h-screen bg-gradient-to-br from-emerald-500/5 via-transparent to-transparent pointer-events-none z-0" />
+      
       {/* Premium Header */}
-      <header className="sticky top-0 z-40 bg-white/70 backdrop-blur-xl border-b border-black/5">
-        <div className="max-w-7xl mx-auto px-4 md:px-8 h-20 flex items-center justify-between">
+      <header className="sticky top-0 z-40 bg-white/70 backdrop-blur-xl border-b border-black/5 overflow-hidden">
+        {/* Decorative Header Gradient */}
+        <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-b from-emerald-500/5 to-transparent pointer-events-none" />
+        
+        <div className="max-w-7xl mx-auto px-4 md:px-8 h-20 flex items-center justify-between relative z-10">
           <div className="flex items-center gap-4">
             <div className="w-12 h-12 bg-black rounded-2xl flex items-center justify-center shadow-lg shadow-black/10">
               <ShoppingBag className="text-white w-6 h-6" />
@@ -802,20 +809,13 @@ export default function App() {
           </div>
 
           <div className="flex items-center gap-3">
-            <button 
-              onClick={handleAdminToggle}
-              className={`p-3 rounded-2xl transition-all ${
-                isAdmin ? 'bg-black text-white shadow-xl shadow-black/20' : 'bg-black/5 text-black/40 hover:bg-black/10'
-              }`}
-            >
-              <Settings className={`w-5 h-5 ${isAdmin ? 'animate-spin-slow' : ''}`} />
-            </button>
             {adminToken && isAdmin && (
               <button 
                 onClick={handleLogout}
-                className="p-3 bg-red-50 text-red-500 rounded-2xl hover:bg-red-100 transition-all"
+                className="p-3 bg-red-50 text-red-500 rounded-2xl hover:bg-red-100 transition-all flex items-center gap-2 font-bold text-xs"
               >
-                <LogOut className="w-5 h-5" />
+                <LogOut className="w-4 h-4" />
+                Logout
               </button>
             )}
           </div>
@@ -828,37 +828,37 @@ export default function App() {
           <motion.div 
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-12"
+            className="flex flex-wrap items-center gap-3 mb-12"
           >
             <button 
               onClick={() => setShowAddModal(true)}
-              className="flex items-center justify-center gap-3 bg-black text-white p-6 rounded-[32px] font-bold hover:scale-[1.02] active:scale-[0.98] transition-all shadow-2xl shadow-black/10"
+              className="flex items-center gap-2 bg-black text-white px-5 py-2.5 rounded-full font-bold text-sm hover:scale-[1.02] active:scale-[0.98] transition-all shadow-lg shadow-black/10"
             >
-              <Plus className="w-5 h-5" />
+              <Plus className="w-4 h-4" />
               New Product
             </button>
             <button 
               onClick={() => setShowSellerPanel(true)}
-              className="flex items-center justify-center gap-3 bg-white border border-black/5 text-black p-6 rounded-[32px] font-bold hover:scale-[1.02] active:scale-[0.98] transition-all shadow-xl shadow-black/5"
+              className="flex items-center gap-2 bg-white border border-black/5 text-black px-5 py-2.5 rounded-full font-bold text-sm hover:scale-[1.02] active:scale-[0.98] transition-all shadow-md shadow-black/5"
             >
-              <User className="w-5 h-5 text-black/20" />
+              <User className="w-4 h-4 text-black/20" />
               Sellers
             </button>
             <button 
               onClick={() => setShowAdPanel(true)}
-              className="flex items-center justify-center gap-3 bg-white border border-black/5 text-black p-6 rounded-[32px] font-bold hover:scale-[1.02] active:scale-[0.98] transition-all shadow-xl shadow-black/5"
+              className="flex items-center gap-2 bg-white border border-black/5 text-black px-5 py-2.5 rounded-full font-bold text-sm hover:scale-[1.02] active:scale-[0.98] transition-all shadow-md shadow-black/5"
             >
-              <ImageIcon className="w-5 h-5 text-black/20" />
+              <ImageIcon className="w-4 h-4 text-black/20" />
               Ads
             </button>
             <button 
               onClick={() => setShowAdRequestsPanel(true)}
-              className="flex items-center justify-center gap-3 bg-white border border-black/5 text-black p-6 rounded-[32px] font-bold hover:scale-[1.02] active:scale-[0.98] transition-all shadow-xl shadow-black/5 relative"
+              className="flex items-center gap-2 bg-white border border-black/5 text-black px-5 py-2.5 rounded-full font-bold text-sm hover:scale-[1.02] active:scale-[0.98] transition-all shadow-md shadow-black/5 relative"
             >
-              <MessageCircle className="w-5 h-5 text-black/20" />
+              <MessageCircle className="w-4 h-4 text-black/20" />
               Requests
               {adRequests.filter(r => r.status === 'pending').length > 0 && (
-                <span className="absolute top-4 right-4 w-3 h-3 bg-red-500 border-2 border-white rounded-full" />
+                <span className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 border-2 border-white rounded-full" />
               )}
             </button>
           </motion.div>
@@ -941,7 +941,10 @@ export default function App() {
                 animate={{ opacity: 1, y: 0 }}
                 className="group bg-white rounded-2xl overflow-hidden border border-black/5 hover:shadow-xl hover:shadow-black/5 transition-all duration-300"
               >
-                <div className="aspect-square overflow-hidden bg-gray-100 relative">
+                <div 
+                  className="aspect-square overflow-hidden bg-gray-100 relative cursor-pointer"
+                  onClick={() => setSelectedProduct(product)}
+                >
                   <img 
                     src={product.image || 'https://picsum.photos/seed/product/800/800'} 
                     alt={product.name}
@@ -956,9 +959,12 @@ export default function App() {
                     </div>
                   )}
                   {isAdmin && (
-                    <div className="absolute top-3 right-3 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <div className="absolute top-3 right-3 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity z-10">
                       <button 
-                        onClick={() => deleteProduct(product._id!)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          deleteProduct(product._id!);
+                        }}
                         className="p-2 bg-white/90 backdrop-blur text-red-500 rounded-full shadow-sm hover:bg-red-50 transition-colors"
                       >
                         <Trash2 className="w-4 h-4" />
@@ -968,25 +974,18 @@ export default function App() {
                 </div>
 
                 <div className="p-5">
-                  <div className="flex justify-between items-start mb-2">
-                    <h3 className="font-bold text-lg leading-tight">{product.name}</h3>
-                    <span className="font-mono font-medium text-black/60">${product.price.toFixed(2)}</span>
+                  <div 
+                    className="cursor-pointer"
+                    onClick={() => setSelectedProduct(product)}
+                  >
+                    <div className="flex justify-between items-start mb-2">
+                      <h3 className="font-bold text-lg leading-tight group-hover:text-emerald-600 transition-colors">{product.name}</h3>
+                      <span className="font-mono font-medium text-black/60">${product.price.toFixed(2)}</span>
+                    </div>
+                    <p className="text-sm text-black/50 line-clamp-2 mb-4 h-10">
+                      {product.description}
+                    </p>
                   </div>
-                  <p className="text-sm text-black/50 line-clamp-2 mb-4 h-10">
-                    {product.description}
-                  </p>
-
-                  {product.fullInfo && (
-                    <details className="mb-4 group/details">
-                      <summary className="text-xs font-bold text-black/40 cursor-pointer hover:text-black transition-colors list-none flex items-center gap-1">
-                        <Plus className="w-3 h-3 group-open/details:rotate-45 transition-transform" />
-                        FULL INFORMATION
-                      </summary>
-                      <p className="mt-2 text-sm text-black/60 whitespace-pre-wrap leading-relaxed border-l-2 border-black/5 pl-3">
-                        {product.fullInfo}
-                      </p>
-                    </details>
-                  )}
 
                   {isAdmin ? (
                     <button 
@@ -1021,8 +1020,6 @@ export default function App() {
                     </div>
                   )}
 
-                  {/* Review Section */}
-                  <ReviewSection productId={product._id!} isAdmin={isAdmin} adminToken={adminToken} />
                 </div>
               </motion.div>
             ))}
@@ -1625,6 +1622,99 @@ export default function App() {
                   >
                     Confirm
                   </button>
+                </div>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Product Detail Modal */}
+      <AnimatePresence>
+        {selectedProduct && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setSelectedProduct(null)}
+              className="absolute inset-0 bg-black/40 backdrop-blur-sm"
+            />
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              className="relative bg-white w-full max-w-2xl rounded-[32px] shadow-2xl overflow-hidden max-h-[90vh] flex flex-col"
+            >
+              <div className="absolute top-6 right-6 z-10">
+                <button 
+                  onClick={() => setSelectedProduct(null)}
+                  className="p-2 bg-white/90 backdrop-blur text-black/20 hover:text-black rounded-full shadow-lg transition-colors"
+                >
+                  <XCircle className="w-6 h-6" />
+                </button>
+              </div>
+
+              <div className="overflow-y-auto custom-scrollbar flex-1">
+                <div className="grid grid-cols-1 md:grid-cols-2">
+                  <div className="h-64 md:h-full">
+                    <img 
+                      src={selectedProduct.image} 
+                      alt={selectedProduct.name} 
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                  <div className="p-8">
+                    <div className="flex justify-between items-start mb-4">
+                      <h2 className="text-3xl font-bold leading-tight">{selectedProduct.name}</h2>
+                      <span className="text-2xl font-mono font-medium text-emerald-600">
+                        ${selectedProduct.price.toFixed(2)}
+                      </span>
+                    </div>
+
+                    <div className="space-y-6">
+                      <div>
+                        <h3 className="text-[10px] font-bold uppercase tracking-widest text-black/40 mb-2">Description</h3>
+                        <p className="text-black/60 leading-relaxed">{selectedProduct.description}</p>
+                      </div>
+
+                      {selectedProduct.fullInfo && (
+                        <div>
+                          <h3 className="text-[10px] font-bold uppercase tracking-widest text-black/40 mb-2">Detailed Specifications</h3>
+                          <p className="text-black/60 leading-relaxed whitespace-pre-wrap text-sm border-l-2 border-black/5 pl-4">
+                            {selectedProduct.fullInfo}
+                          </p>
+                        </div>
+                      )}
+
+                      {!isAdmin && (
+                        <div className="flex gap-3">
+                          <button 
+                            onClick={() => contactWhatsApp(selectedProduct)}
+                            disabled={!selectedProduct.inStock}
+                            className="flex-1 flex items-center justify-center gap-2 bg-[#25D366] text-white py-4 rounded-2xl text-sm font-bold hover:opacity-90 active:scale-95 transition-all disabled:opacity-50 disabled:grayscale"
+                          >
+                            <MessageCircle className="w-5 h-5" />
+                            WhatsApp
+                          </button>
+                          <button 
+                            onClick={() => contactEmail(selectedProduct)}
+                            disabled={!selectedProduct.inStock}
+                            className="flex-1 flex items-center justify-center gap-2 bg-black text-white py-4 rounded-2xl text-sm font-bold hover:opacity-90 active:scale-95 transition-all disabled:opacity-50"
+                          >
+                            <Mail className="w-5 h-5" />
+                            Email
+                          </button>
+                        </div>
+                      )}
+
+                      <ReviewSection 
+                        productId={selectedProduct._id!} 
+                        isAdmin={isAdmin} 
+                        adminToken={adminToken} 
+                      />
+                    </div>
+                  </div>
                 </div>
               </div>
             </motion.div>
