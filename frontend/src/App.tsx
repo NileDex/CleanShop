@@ -1154,7 +1154,7 @@ export default function App() {
                             {product.inStock ? 'Mark Out of Stock' : 'Mark In Stock'}
                           </button>
                         ) : (
-                          <div className="flex gap-2 mt-auto">
+                          <div className="flex flex-col sm:flex-row gap-2 mt-auto">
                             <button 
                               onClick={() => contactWhatsApp(product)}
                               disabled={!product.inStock}
@@ -1804,7 +1804,7 @@ export default function App() {
                 className="text-xs font-bold tracking-widest text-black/40 hover:text-black transition-colors flex items-center gap-1"
               >
                 <Settings className="w-3 h-3" />
-                Admin Panel
+                panel
               </button>
             )}
           </div>
