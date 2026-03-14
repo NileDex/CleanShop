@@ -24,6 +24,8 @@ import {
   MessageSquare
 } from 'lucide-react';
 
+const API_URL = import.meta.env.VITE_API_URL || 'https://cleanshop-backend.onrender.com';
+
 interface AdRequest {
   _id?: string;
   name: string;
@@ -166,7 +168,7 @@ const ReviewSection = ({ productId }: { productId: string }) => {
 
   const fetchReviews = async () => {
     try {
-      const res = await fetch(`/api/products/${productId}/reviews`);
+      const res = await fetch(`${API_URL}/api/products/${productId}/reviews`);
       if (res.ok) {
         const data = await res.json();
         setReviews(data);
@@ -183,7 +185,7 @@ const ReviewSection = ({ productId }: { productId: string }) => {
     if (!newReview.userName || !newReview.comment) return;
     setSubmitting(true);
     try {
-      const res = await fetch(`/api/products/${productId}/reviews`, {
+      const res = await fetch(`${API_URL}/api/products/${productId}/reviews`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(newReview)
@@ -348,7 +350,7 @@ export default function App() {
   const fetchAdRequests = async () => {
     if (!adminToken) return;
     try {
-      const res = await fetch('/api/ad-requests', {
+      const res = await fetch(`${API_URL}/api/ad-requests`, {
         headers: { 'Authorization': `Bearer ${adminToken}` }
       });
       if (res.ok) {
@@ -364,7 +366,7 @@ export default function App() {
     e.preventDefault();
     setUploading(true);
     try {
-      const res = await fetch('/api/ad-requests', {
+      const res = await fetch(`${API_URL}/api/ad-requests`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(newAdRequest)
@@ -388,7 +390,7 @@ export default function App() {
       'Are you sure you want to delete this request?',
       async () => {
         try {
-          const res = await fetch(`/api/ad-requests/${id}`, {
+          const res = await fetch(`${API_URL}/api/ad-requests/${id}`, {
             method: 'DELETE',
             headers: { 'Authorization': `Bearer ${adminToken}` }
           });
@@ -402,7 +404,7 @@ export default function App() {
 
   const fetchAds = async () => {
     try {
-      const res = await fetch('/api/ads');
+      const res = await fetch(`${API_URL}/api/ads`);
       if (res.ok) {
         const data = await res.json();
         setAds(data);
@@ -416,7 +418,7 @@ export default function App() {
     e.preventDefault();
     if (!adminToken) return;
     try {
-      const res = await fetch('/api/ads', {
+      const res = await fetch(`${API_URL}/api/ads`, {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',
@@ -440,7 +442,7 @@ export default function App() {
       'Are you sure you want to delete this ad? This action cannot be undone.',
       async () => {
         try {
-          const res = await fetch(`/api/ads/${id}`, {
+          const res = await fetch(`${API_URL}/api/ads/${id}`, {
             method: 'DELETE',
             headers: { 'Authorization': `Bearer ${adminToken}` }
           });
@@ -466,7 +468,7 @@ export default function App() {
   const fetchSellers = async () => {
     if (!adminToken) return;
     try {
-      const res = await fetch('/api/sellers', {
+      const res = await fetch(`${API_URL}/api/sellers`, {
         headers: { 'Authorization': `Bearer ${adminToken}` }
       });
       if (res.ok) {
@@ -482,7 +484,7 @@ export default function App() {
     e.preventDefault();
     if (!adminToken) return;
     try {
-      const res = await fetch('/api/sellers', {
+      const res = await fetch(`${API_URL}/api/sellers`, {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',
@@ -506,7 +508,7 @@ export default function App() {
       'Are you sure? This will not delete products assigned to this seller, but they will no longer have contact info associated.',
       async () => {
         try {
-          const res = await fetch(`/api/sellers/${id}`, {
+          const res = await fetch(`${API_URL}/api/sellers/${id}`, {
             method: 'DELETE',
             headers: { 'Authorization': `Bearer ${adminToken}` }
           });
@@ -520,7 +522,7 @@ export default function App() {
 
   const checkStatus = async () => {
     try {
-      const res = await fetch('/api/products');
+      const res = await fetch(`${API_URL}/api/products`);
       if (res.ok) setDbStatus('connected');
       else if (res.status === 503) setDbStatus('connecting');
       else setDbStatus('error');
@@ -532,7 +534,7 @@ export default function App() {
   const fetchProducts = async () => {
     setError(null);
     try {
-      const res = await fetch('/api/products');
+      const res = await fetch(`${API_URL}/api/products`);
       const contentType = res.headers.get("content-type");
       
       if (!res.ok) {
@@ -569,7 +571,7 @@ export default function App() {
     e.preventDefault();
     setLoginError(null);
     try {
-      const res = await fetch('/api/login', {
+      const res = await fetch(`${API_URL}/api/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ password: adminPassword })
@@ -623,7 +625,7 @@ export default function App() {
     if (!adminToken) return;
     setUploading(true);
     try {
-      const res = await fetch('/api/products', {
+      const res = await fetch(`${API_URL}/api/products`, {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',
@@ -648,7 +650,7 @@ export default function App() {
   const toggleStock = async (id: string, currentStatus: boolean) => {
     if (!adminToken) return;
     try {
-      const res = await fetch(`/api/products/${id}`, {
+      const res = await fetch(`${API_URL}/api/products/${id}`, {
         method: 'PUT',
         headers: { 
           'Content-Type': 'application/json',
@@ -670,7 +672,7 @@ export default function App() {
       'Are you sure you want to delete this product? This action cannot be undone.',
       async () => {
         try {
-          const res = await fetch(`/api/products/${id}`, { 
+          const res = await fetch(`${API_URL}/api/products/${id}`, { 	
             method: 'DELETE',
             headers: { 'Authorization': `Bearer ${adminToken}` }
           });
