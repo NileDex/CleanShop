@@ -823,6 +823,9 @@ export default function App() {
       </header>
 
       <main className="max-w-7xl mx-auto px-4 md:px-8 py-12 pb-32 min-h-[60vh]">
+        {/* Ad Carousel - Always on top */}
+        {!isAdmin && <AdCarousel ads={ads} onBookAd={() => setShowAdBookingModal(true)} />}
+
         <AnimatePresence mode="wait">
           {selectedProduct ? (
             <motion.div 
@@ -830,7 +833,7 @@ export default function App() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -20 }}
-              className="bg-white rounded-[32px] shadow-2xl overflow-hidden border border-black/5"
+              className="bg-white rounded-[32px] overflow-hidden border border-black/5 mt-8"
             >
               <div className="p-4 md:p-8 border-b border-black/5 flex items-center justify-between bg-black/5">
                 <button 
@@ -854,7 +857,7 @@ export default function App() {
                     transition={{ delay: 0.2 }}
                     src={selectedProduct.image || 'https://picsum.photos/seed/product/800/800'} 
                     alt={selectedProduct.name} 
-                    className="w-full h-full object-contain rounded-2xl shadow-xl"
+                    className="w-full h-full object-contain rounded-2xl"
                   />
                 </div>
                 <div className="p-8 md:p-12 lg:p-16 flex flex-col">
@@ -966,9 +969,6 @@ export default function App() {
                   </button>
                 </div>
               )}
-
-              {/* Ad Carousel */}
-              {!isAdmin && <AdCarousel ads={ads} onBookAd={() => setShowAdBookingModal(true)} />}
 
               {/* Header Section */}
               <div className="mb-12 flex flex-col md:flex-row md:items-end justify-between gap-6">
